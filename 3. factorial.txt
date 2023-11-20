@@ -1,0 +1,27 @@
+    AREA RESET, DATA, READONLY
+    EXPORT __Vectors
+__Vectors 
+    DCD 0x40001000 
+    DCD Reset_Handler 
+ 
+    ALIGN
+    AREA factorial,CODE
+    ENTRY
+    EXPORT Reset_Handler
+Reset_Handler
+                           
+    MOV  R0,#1             
+    MOV  R1,#5             
+    MOV  R3,#1             
+    BL loop
+    B STOP
+
+loop
+        MUL R4,R3,R0
+        MOV R3,R4
+        ADD R0,R0,#1
+        CMP R0,R1
+        BLE loop
+        MOV PC,LR
+STOP B STOP                 
+    END

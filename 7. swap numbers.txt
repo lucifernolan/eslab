@@ -1,0 +1,21 @@
+    AREA RESET, DATA, READONLY
+    EXPORT __Vectors
+__Vectors 
+    DCD 0x40001000 
+    DCD Reset_Handler 
+    ALIGN
+    AREA SwapSection, CODE   
+    ENTRY                
+    EXPORT Reset_Handler
+Reset_Handler
+    LDR   R0, =x         
+    LDR   R1, [R0]       
+    LDR   R2, =y         
+    LDR   R3, [R2]       
+    STR   R1, [R2]       
+    STR   R3, [R0]       
+STOP
+    B STOP
+x DCD 5 
+y DCD 10 
+    END

@@ -1,0 +1,26 @@
+    AREA RESET, DATA, READONLY
+    EXPORT __Vectors
+__Vectors 
+    DCD 0x40001000 
+    DCD Reset_Handler 
+    ALIGN
+    AREA CodeSection, CODE       
+    ENTRY                        
+    EXPORT Reset_Handler
+Reset_Handler
+start
+    LDR R0, =string      
+    MOV R1, #0           
+
+loop
+    LDRB R2, [R0, R1]   
+    CMP R2, #0          
+    BEQ done            
+    ADD R1, R1, #1      
+    B loop             
+done
+
+stop
+    B stop
+string DCB "Hello, ARM!", 0  
+    END
