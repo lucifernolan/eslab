@@ -1,0 +1,537 @@
+1. LED Relay
+
+#include <LPC17xx.H>​
+int main(void)​ {​
+LPC_PINCON->PINSEL1 = 0x00000000; 
+LPC_GPIO0->FIODIR = 0x03000000;      
+       while(1) {​
+if(!(LPC_GPIO2->FIOPIN & 0x00000800)) ​
+     {
+             LPC_GPIO0->FIOSET = 0x03000000; 
+} ​
+else​ {​
+
+             LPC_GPIO0->FIOCLR = 0x03000000; 
+
+    }​
+  }​
+} 
+
+___________________________________________________________________
+
+
+2. Stepper Motor
+
+#include <LPC17xx.H>
+void clock_wise(void);
+void anti_clock_wise(void);
+unsigned long int var1,var2;
+unsigned int i=0,j=0,k=0;
+int main(void)
+{
+	LPC_PINCON->PINSEL4 = 0x00000000;		
+	LPC_GPIO2->FIODIR = 0x0000000F;			
+	while(1)
+	{
+		for(j=0;j<30;j++)           			
+			clock_wise();				
+		
+		for(k=0;k<50000;k++);        			
+		
+		for(j=0;j<30;j++)          				
+			anti_clock_wise();
+
+		for(k=0;k<50000;k++) ;       			
+	} 																	
+} 																		
+void clock_wise(void)
+{
+		var1 = 0x00000001;         				
+    for(i=0;i<=3;i++)         				
+	{
+	   LPC_GPIO2->FIOCLR =  0X0000000F;
+	   LPC_GPIO2->FIOSET =  var1;
+		 var1 = var1<<1;        					
+     for(k=0;k<15000;k++) ;						         
+  }
+}
+void anti_clock_wise(void)
+{
+		var1 = 0x0000008;      						
+    for(i=0;i<=3;i++)       					
+    {
+	    LPC_GPIO2->FIOCLR =  0X0000000F;
+			LPC_GPIO2->FIOSET =  var1;
+			var1 = var1>>1;      						
+      for(k=0;k<15000;k++); 					
+    }
+}
+
+_______________________________________________________________________________________
+
+3. Seven Segment Display
+
+#include <LPC17xx.h>
+unsigned int delay, count=0, Switchcount=0,j;
+
+unsigned int Disp[16]={0x000003f0, 0x00000060, 0x000005b0, 0x000004f0, 0x00000660,0x000006d0,
+					   0x000007d0, 0x00000070, 0x000007f0, 0x000006f0, 0x00000770,0x000007c0,
+					   0x00000390, 0x000005e0, 0x00000790, 0x00000710 };
+
+#define ALLDISP  0x00180000												
+#define DATAPORT 0x00000ff0												
+int main (void)
+{
+	LPC_PINCON->PINSEL0 = 0x00000000;   
+	LPC_PINCON->PINSEL1 = 0x00000000;
+	LPC_GPIO0->FIODIR =	0x00180ff0;
+	
+	while(1)
+	{
+		LPC_GPIO0->FIOSET |= ALLDISP;
+		LPC_GPIO0->FIOCLR =	0x00000ff0;	 							
+		LPC_GPIO0->FIOSET = Disp[Switchcount];   			
+				
+			 for(j=0;j<3;j++)
+			for(delay=0;delay<30000;delay++);	 					
+			                                   
+				Switchcount++;
+				if(Switchcount == 0x10)										
+			    {
+				   Switchcount = 0;
+				   LPC_GPIO0->FIOCLR  =	0x00180ff0;				
+			    }
+	}
+}
+​
+___________________________________________________________
+
+4. Arithmetic Operations ADDITION & SUBTRACTION
+
+AREA RESET, DATA, READONLY
+EXPORT__Vectors
+
+__Vectors
+DCD 0x40001000 ; stack pointer value when stack is empty
+DCD Reset Handler ; reset vector
+
+ALIGN
+AREA mycode, CODE, READONLY
+ENTRY
+EXPORT Reset_Handler
+
+Reset_Handler
+LDR RO, =VALUE1
+LDR R1, [RO]
+LDR RO, =VALU2
+LDR R3, [RO]
+ADDS R6, R1, R3
+LDR R2.=RESULT
+STR R6, [R2]
+
+STOP
+	B STOP
+VALUE1 DCD 0X12345678
+VALUE2 DCD 0XABCDEF12
+	AREA data, DATA, READWRITE
+RESULT DCD 0
+	END
+
+5. MULTIPLICATION
+
+AREA RESET, DATA, READONLY
+EXPORT __VeCtors
+
+DCD 0x40001000;
+DCD Reser_Handler
+ALIGN
+
+AREA myCode, CODE, READONLY
+ENTRY
+Reset_Handler
+
+LDR R1, =VALUE1
+LDR R2, =VALUE2
+UMULL R3, R4, R2, R1
+LDR R2, =RESULT
+STR R4, [R2]
+
+ADD R2, #4
+STR R4, [R2]
+
+STOP
+	B STOP
+VALUE1 DCD 0X54000000
+VALUE2 DCD 0X10000002
+AREA daTa, DATA, READWRITE
+RESULT DCD 0
+
+
+6. 2 DIGIT HEXADECIMAL TO UNPACKED BDC
+
+AREA RESET, DATA, READONLY
+EXPORT __Vectors
+__Vectors
+DCD 0x40001000 ;		stack pointer value when stack is empty
+DCD Reset_Handler;	reset vector
+ALIGNAREA mycode, CODE, READONLY
+ENTRY
+EXPORT Reset_Handler
+Reset_Handler
+LDR R0,=NUM
+LDR R3,=RESULT
+LDRB R1,[R0]    ;		load hex number into register R1
+AND R2,R1,#0x0F ;		mask upper 4 bits
+CMP R2,#09      ;		compare the digit with 09
+BLS DOWN        ;		if it is lower than 9 then jump to down label
+ADD R2,#07      ;		else add 07 to that number
+DOWN
+ADD R2,#0x30    ;Add 30H to the number, Ascii value of first digit
+STRB R2,[R3]
+AND R4,R1,#0xF0
+MOV R4,R4,LSR#04; 	Shift right by 4 bits
+CMP R4,#09 ; 		check for >9 or not
+BLS DOWN1
+ADD R3,#07
+DOWN1
+ADD R4,#0x30 ; 		Ascii value of second digit
+STRB R4,[R3,#01]
+NUM DCD 0x000003A
+AREA data, DATA, READWRITE
+RESULT DCD 0
+END                  
+
+7. BUBBLE SORT
+
+AREA RESET, DATA, READONLY
+EXPORT __ Vectors
+
+__Vectors
+DCD 0x40001000  ; 	stack pointer value when stack is empty
+DCD Reset Handler ; 	reset vector
+ALIGN
+AREA ascend, code, readonly
+ENTRY
+
+Reset_Handler
+mov r4,#0
+mov r1,#10
+ldr r0,=list
+ldr 12. =result
+up ldr r3, [r0,r4]
+str r3, [r2,r4]
+add r4, #04
+sub r1,#01
+cmp r1,#00
+bhi up
+ldr r0, =result
+mov r3, #10
+sub r3, r3, #1
+mov r9, 13
+
+outer_loop
+mov r5, r0
+mov r4, r3
+
+inner_loop
+ldr r6, [r5], #4
+ldr r7, [r5]
+cmp r7, r6
+strls r6, [r5]
+strls r7, [r5, #-4]
+subs r4, r4, #1
+bne inner_loop
+sub r3, #1
+subs r9, r9, #1
+bne outer_loop
+list dcd 0x10,0x05,0x33,0x24,0x56,0x77,0x21,0x04,0x87,0x01
+AREA data1, data, readwrite
+result DCW 0,0,0,0,0,0,0,0,0,0
+end
+
+8. External Input
+
+#include<LPC17xx.h>
+void EINT3_IRQHandler(void);
+unsigned char int3_flag=0;
+int main(void)
+{
+	LPC_PINCON->PINSEL4 |= 0x04000000;		
+	LPC_PINCON->PINSEL4 &= 0xFCFFFFFF;		
+	LPC_GPIO2->FIODIR = 0x00001000;				
+	LPC_GPIO2->FIOSET = 0x00001000;				
+	
+	LPC_SC->EXTINT = 0x00000008;					
+	LPC_SC->EXTMODE = 0x00000008;					
+	LPC_SC->EXTPOLAR = 0x00000000;				
+																				
+	NVIC_EnableIRQ(EINT3_IRQn);						
+	  
+	while(1) ;
+}
+
+void EINT3_IRQHandler(void)
+{
+		LPC_SC->EXTINT = 0x00000008;				
+	
+		if(int3_flag == 0x00)								
+		{
+			LPC_GPIO2->FIOCLR = 0x00001000;
+			int3_flag = 0xff;
+		}										
+		else																
+		{
+			LPC_GPIO2->FIOSET = 0x00001000;
+			int3_flag = 0;
+		}
+}
+
+________________________________________________
+
+9. KEYPAD
+
+#include <LPC17xx.h>
+#include "lcd.h"
+void scan(void);
+
+unsigned char Msg1[14] = "ALS BENGALURU";
+unsigned char Msg2[13] = "KEY PRESSED=";
+unsigned char col,row,var,flag,key,*ptr;
+unsigned long int i,var1,temp,temp3;
+
+unsigned char SCAN_CODE[16] = {0x1E,0x1D,0x1B,0x17,
+ 							  	0x2E,0x2D,0x2B,0x27,
+							  	0x4E,0x4D,0x4B,0x47,
+							  	0x8E,0x8D,0x8B,0x87};
+
+unsigned char ASCII_CODE[16] = {'0','1','2','3',
+ 								 '4','5','6','7',
+								 '8','9','A','B',
+								 'C','D','E','F'};
+
+int main(void)
+{
+	LPC_PINCON->PINSEL3 = 0x00000000; 			
+	LPC_PINCON->PINSEL0 = 0x00000000;  			
+	LPC_PINCON->PINSEL1 = 0x00000000; 			
+	LPC_GPIO0->FIODIR &= ~0x00078000; 			
+	LPC_GPIO1->FIODIR |= 0x00F00000; 				
+	LPC_GPIO1->FIOSET = 0x00F00000;  
+
+	lcd_init();
+
+	temp1 = 0x80;														
+	lcd_com();
+	delay_lcd(800);
+	lcd_puts(&Msg1[0]);	 										
+	temp1 = 0xC0;														
+	lcd_com();
+	delay_lcd(800);
+	lcd_puts(&Msg2[0]);	 										
+
+	while(1)
+	{
+		while(1)
+		{
+			for(row=1;row<5;row++)
+			{
+				if(row == 1)
+				var1 = 0x00100000;
+				else if(row == 2)
+				var1 = 0x00200000;
+				else if(row == 3)
+				var1 = 0x00400000;
+				else if(row == 4)
+				var1 = 0x00800000;
+			
+				temp = var1;
+
+				LPC_GPIO1->FIOSET = 0x00F00000;
+				LPC_GPIO1->FIOCLR = var1;
+
+				flag = 0;
+				scan();
+				if(flag == 1)
+				break;
+		
+			} 																	
+
+			if(flag == 1)
+			break;
+		
+		}							 												
+		for(i=0;i<16;i++)
+		{
+			if(key == SCAN_CODE[i])
+			{
+				key = ASCII_CODE[i];
+				break;
+			} 																
+
+		}																		
+
+		temp1 = 0xCC;
+		lcd_com();
+		delay_lcd(800);
+		lcd_puts(&key);
+		
+	}																		
+}																			
+
+void scan(void)
+{
+ 	unsigned long temp3;
+	temp3 = LPC_GPIO0->FIOPIN;	
+	temp3 &= 0x00078000;
+	if(temp3 != 0x00078000)
+	{
+		for(i=0;i<500;i++);
+		temp3 = LPC_GPIO0->FIOPIN;	
+		temp3 &= 0x00078000;
+		if(temp3 != 0x00078000)
+		{
+			flag = 1;
+			temp3 >>= 15;									
+			temp >>= 16;									
+			key = temp3|temp;	
+		}																
+	}																	
+}	
+
+
+________________________________
+10. PWM:
+
+#include <LPC17xx.H>
+void pwm_init(void);
+void PWM1_IRQHandler(void);
+unsigned long int i;
+unsigned char flag,flag1;
+int main(void)
+{     
+	pwm_init();
+	while(1);
+}																		
+
+void pwm_init(void)
+{
+	LPC_SC->PCONP = (1<<6);						
+	LPC_PINCON->PINSEL7 = 0x000C0000;	
+	  
+	LPC_PWM1->PR  = 0x00000000;      	
+	LPC_PWM1->PCR = 0x00000400;      	
+	LPC_PWM1->MCR = 0x00000003;      	
+	LPC_PWM1->MR0 = 30000;           	
+	LPC_PWM1->MR2 = 0x00000100;      	
+	LPC_PWM1->LER = 0x000000FF;      	
+	LPC_PWM1->TCR = 0x00000002;      	
+	LPC_PWM1->TCR = 0x00000009;      	
+	NVIC_EnableIRQ(PWM1_IRQn);
+}
+
+void PWM1_IRQHandler(void)
+{
+	LPC_PWM1->IR = 0xff; 							
+
+	if(flag == 0x00)
+    {
+		LPC_PWM1->MR2 += 100;
+		LPC_PWM1->LER = 0x000000FF;
+
+		if(LPC_PWM1->MR2 >= 27000)			
+		{
+        	flag1 = 0xff;
+        	flag = 0xff;
+        	LPC_PWM1->LER = 0x000000fF;
+		}
+	}
+    else if(flag1 == 0xff)
+    {
+		LPC_PWM1->MR2 -= 100;
+		LPC_PWM1->LER = 0x000000fF;
+    
+ 		if(LPC_PWM1->MR2 <= 0x300)			
+		{
+			flag  = 0x00;
+			flag1 = 0x00;
+			LPC_PWM1->LER = 0X000000fF;
+		}
+	}
+}
+
+
+___________________________________
+
+LCD 
+
+
+
+#include<LPC17xx.h>
+#include "lcd.h"
+#include<stdio.h>
+#define	Ref_Vtg		3.300
+#define	Full_Scale	0xFFF				//12 bit ADC
+
+int main(void)
+{
+	unsigned int adc_temp;
+	unsigned int i;
+	float in_vtg;
+	unsigned char vtg[7],dval[7], blank[]="   ";
+	unsigned char Msg3[11] = {"MIT:"};
+	unsigned char Msg4[12] = {"Dept of IT:"};
+
+   lcd_init();
+   LPC_PINCON->PINSEL3 |= 0xC0000000;																	//P1.31 as AD0.5
+	 LPC_SC->PCONP |= (1<<12);																					//enable the peripheral ADC
+	
+	temp1 = 0x80;
+	lcd_com();
+	delay_lcd(800);
+	lcd_puts(&Msg3[0]);
+
+	temp1 = 0xC0;
+	lcd_com();
+	delay_lcd(800);
+	lcd_puts(&Msg4[0]);
+
+	while(1)
+	{
+		LPC_ADC->ADCR = (1<<5)|(1<<21)|(1<<24);															//0x01200001;//ADC0.5, start conversion and operational	
+		for(i=0;i<2000;i++);																								//delay for conversion
+		while((adc_temp = LPC_ADC->ADGDR) == 0x80000000);										//wait till 'done' bit is 1, indicates conversion complete
+		adc_temp = LPC_ADC->ADGDR;
+		adc_temp >>= 4;
+		adc_temp &= 0x00000FFF;																							//12 bit ADC
+		in_vtg = (((float)adc_temp * (float)Ref_Vtg))/((float)Full_Scale);	//calculating input analog voltage
+		sprintf(vtg,"%3.2fV",in_vtg);																				//convert the readings into string to display on LCD
+		sprintf(dval,"%x",adc_temp);
+		for(i=0;i<2000;i++);
+
+		temp1 = 0x8A;
+		lcd_com();
+		delay_lcd(800);
+		lcd_puts(&vtg[0]);
+
+		temp1 = 0xCB;
+		lcd_com();
+		lcd_puts(&blank[0]);
+
+		temp1 = 0xCB;
+		lcd_com();
+		delay_lcd(800);
+		lcd_puts(&dval[0]);
+
+		for(i=0;i<200000;i++);
+		for(i=0;i<7;i++)
+		vtg[i] = dval[i] = 0x00;
+		adc_temp = 0;
+		in_vtg = 0;
+	}
+}
+
+ 
+
+
+
+_________________________________________
